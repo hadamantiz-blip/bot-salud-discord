@@ -1,16 +1,29 @@
-Python
 import os
+import threading
+from flask import Flask
 import discord
 from google import genai
 
-# Obtener claves desde variables de entorno
+# --- MINI SERVIDOR WEB PARA QUE RENDER NO APAGUE EL BOT ---
+app = Flask('')
+
+@app.route('/')
+def home():
+    return "¡El bot de Hadamantiz está vivo y funcionando 24/7!"
+
+def run_web():
+    app.run(host='0.0.0.0', port=8080)
+
+def keep_alive():
+    t = threading.Thread(target=run_web)
+    t.start()
+
+# --- CONFIGURACIÓN DE DISCORD Y GEMINI ---
 DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-# Inicializar cliente de Gemini
 ai_client = genai.Client(api_key=GEMINI_API_KEY)
 
-# Prompt del Asistente de Salud y Terapias Alternativas
 SYSTEM_PROMPT = """
 Eres un experto y educador en terapias alternativas, medicina natural, holística y bienestar integrativo dentro de la comunidad Hadamantiz.
 Tu objetivo es brindar a los miembros recomendaciones sobre terapias complementarias, hábitos saludables, fermentos, plantas medicinales, alimentación consciente y técnicas de autocuidado.
@@ -20,7 +33,6 @@ Instrucciones:
 - Aclara siempre que tus recomendaciones son de carácter informativo y educativo, y no reemplazan la consulta con un profesional de la salud.
 """
 
-# Configurar Intenciones de Discord
 intents = discord.Intents.default()
 intents.message_content = True
 client = discord.Client(intents=intents)
@@ -62,4 +74,6 @@ async def on_message(message):
                 print(f"Error al procesar solicitud: {e}")
                 await message.channel.send("⚠️ Ocurrió un problema al procesar tu mensaje. Intenta nuevamente.")
 
+# Iniciar servidor web y bot
+keep_alive()
 client.run(DISCORD_TOKEN)

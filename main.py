@@ -1,8 +1,8 @@
 import os
 import threading
+import requests
 from flask import Flask
 import discord
-import google.generativeai as genai
 
 # --- SERVIDOR WEB FLASK PARA RENDER ---
 app = Flask(__name__)
@@ -15,14 +15,9 @@ def run_flask():
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
 
-# --- CONFIGURACIÓN DE DISCORD Y GEMINI ---
+# --- CONFIGURACIÓN ---
 DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-
-genai.configure(api_key=GEMINI_API_KEY)
-
-# Configuración del modelo con la librería clásica
-model = genai.GenerativeModel('gemini-1.5-flash')
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -49,8 +44,19 @@ async def on_message(message):
             try:
                 prompt_final = f"Eres un experto y educador en terapias alternativas, medicina natural, holística y bienestar integrativo dentro de la comunidad Hadamantiz. Responde de forma empática y estructurada a la siguiente consulta: {clean_input}"
                 
-                response = model.generate_content(prompt_final)
-                texto_respuesta = response.text
+                # Petición HTTP directa a la API de Gemini (Sin conflictos de librerías)
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+                headers = {'Content-Type': 'application/json'}
+                data = {
+                    "contents": [{
+                        "parts": [{"text": prompt_final}]
+                    }]
+                }
+                
+                response = requests.post(url, headers=headers, json=data)
+                resultado_json = response.json()
+                
+                texto_respuesta = resultado_json['candidates'][0]['content']['parts'][0]['text']
                 
                 if len(texto_respuesta) > 2000:
                     for i in range(0, len(texto_respuesta), 1900):
@@ -59,8 +65,8 @@ async def on_message(message):
                     await message.channel.send(texto_respuesta)
 
             except Exception as e:
-                print(f"🚨 ERROR CRÍTICO DE GEMINI: {str(e)}")
-                await message.channel.send(f"⚠️ Error técnico: {str(e)[:100]}")
+                print(f"🚨 ERROR: {str(e)}")
+                await message.channel.send("⚠️ Ocurrió un problema al procesar tu mensaje. Intenta nuevamente.")
 
 # Iniciar servidor web Flask
 threading.Thread(target=run_flask, daemon=True).start()

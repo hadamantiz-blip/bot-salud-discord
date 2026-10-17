@@ -1,28 +1,12 @@
 import os
-import threading
-from flask import Flask
 import discord
 from google import genai
+from google.genai import types
 
-# --- MINI SERVIDOR WEB PARA QUE RENDER NO APAGUE EL BOT ---
-app = Flask('')
-
-@app.route('/')
-def home():
-    return "¡El bot de Hadamantiz está vivo y funcionando 24/7!"
-
-def run_web():
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host='0.0.0.0', port=port)
-    
-def keep_alive():
-    t = threading.Thread(target=run_web)
-    t.start()
-
-# --- CONFIGURACIÓN DE DISCORD Y GEMINI ---
 DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
+# Inicializar cliente de Gemini correctamente
 ai_client = genai.Client(api_key=GEMINI_API_KEY)
 
 SYSTEM_PROMPT = """
@@ -56,12 +40,16 @@ async def on_message(message):
             if not clean_input:
                 clean_input = "Hola"
 
-            prompt_completo = f"{SYSTEM_PROMPT}\n\nUsuario pregunta: {clean_input}"
-
             try:
+                # Usar el modelo correcto y configuración de contenido limpia
                 response = ai_client.models.generate_content(
-                    model='gemini-1.5-flash',
-                    contents=prompt_completo,
+                    model='gemini-2.5-flash',
+                    contents=[
+                        types.Content(
+                            role="user",
+                            parts=[types.Part.from_text(text=f"{SYSTEM_PROMPT}\n\nPregunta: {clean_input}")]
+                        )
+                    ]
                 )
                 
                 texto_respuesta = response.text
@@ -72,9 +60,7 @@ async def on_message(message):
                     await message.channel.send(texto_respuesta)
 
             except Exception as e:
-                print(f"Error al procesar solicitud: {e}")
+                print(f"Error detallado: {e}")
                 await message.channel.send("⚠️ Ocurrió un problema al procesar tu mensaje. Intenta nuevamente.")
 
-# Iniciar servidor web y bot
-keep_alive()
 client.run(DISCORD_TOKEN)

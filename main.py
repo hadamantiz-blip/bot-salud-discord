@@ -1,12 +1,25 @@
 import os
+import threading
+from flask import Flask
 import discord
 from google import genai
 from google.genai import types
 
+# --- SERVIDOR WEB FLASK PARA MANTENER ALERTA A RENDER ---
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return "Bot de IA para Hadamantiz activo 24/7"
+
+def run_flask():
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
+
+# --- CONFIGURACIÓN DE DISCORD Y GEMINI ---
 DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-# Inicializar cliente de Gemini correctamente
 ai_client = genai.Client(api_key=GEMINI_API_KEY)
 
 SYSTEM_PROMPT = """
@@ -41,7 +54,7 @@ async def on_message(message):
                 clean_input = "Hola"
 
             try:
-                # Usar el modelo correcto y configuración de contenido limpia
+                # Consulta limpia a Gemini 2.5 Flash
                 response = ai_client.models.generate_content(
                     model='gemini-2.5-flash',
                     contents=[
@@ -60,7 +73,11 @@ async def on_message(message):
                     await message.channel.send(texto_respuesta)
 
             except Exception as e:
-                print(f"Error detallado: {e}")
+                print(f"Error en Gemini: {e}")
                 await message.channel.send("⚠️ Ocurrió un problema al procesar tu mensaje. Intenta nuevamente.")
 
+# Iniciar servidor web en un hilo secundario
+threading.Thread(target=run_flask, daemon=True).start()
+
+# Iniciar bot de Discord
 client.run(DISCORD_TOKEN)

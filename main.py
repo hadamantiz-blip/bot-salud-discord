@@ -40,9 +40,10 @@ async def on_message(message):
                 clean_input = "Hola"
 
             try:
-                prompt_final = f"Eres un experto y educador en terapias alternativas y medicina natural de la comunidad Hadamantiz. Responde brevemente a: {clean_input}"
+                prompt_final = f"Eres un experto y educador en terapias alternativas y medicina natural de la comunidad Hadamantiz. Responde de forma empática a: {clean_input}"
                 
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+                # Usar la versión v1 oficial que corresponde a tu clave
+                url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
                 headers = {'Content-Type': 'application/json'}
                 data = {
                     "contents": [{
@@ -53,14 +54,18 @@ async def on_message(message):
                 response = requests.post(url, headers=headers, json=data)
                 resultado_json = response.json()
                 
-                # Si Google devuelve un error, lo mandamos tal cual al chat
                 if 'error' in resultado_json:
                     error_msg = resultado_json['error'].get('message', 'Error desconocido')
                     await message.channel.send(f"🚨 **Google API Error:** {error_msg}")
                     return
 
                 texto_respuesta = resultado_json['candidates'][0]['content']['parts'][0]['text']
-                await message.channel.send(texto_respuesta)
+                
+                if len(texto_respuesta) > 2000:
+                    for i in range(0, len(texto_respuesta), 1900):
+                        await message.channel.send(texto_respuesta[i:i+1900])
+                else:
+                    await message.channel.send(texto_respuesta)
 
             except Exception as e:
                 await message.channel.send(f"🚨 **Excepción Python:** {str(e)}")

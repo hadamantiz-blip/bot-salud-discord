@@ -4,7 +4,6 @@ import requests
 from flask import Flask
 import discord
 
-# --- SERVIDOR WEB FLASK PARA RENDER ---
 app = Flask(__name__)
 
 @app.route('/')
@@ -15,7 +14,6 @@ def run_flask():
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
 
-# --- CONFIGURACIÓN ---
 DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
@@ -42,9 +40,8 @@ async def on_message(message):
                 clean_input = "Hola"
 
             try:
-                prompt_final = f"Eres un experto y educador en terapias alternativas, medicina natural, holística y bienestar integrativo dentro de la comunidad Hadamantiz. Responde de forma empática y estructurada a la siguiente consulta: {clean_input}"
+                prompt_final = f"Eres un experto y educador en terapias alternativas y medicina natural de la comunidad Hadamantiz. Responde brevemente a: {clean_input}"
                 
-                # Petición HTTP directa a la API de Gemini (Sin conflictos de librerías)
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
                 headers = {'Content-Type': 'application/json'}
                 data = {
@@ -56,20 +53,17 @@ async def on_message(message):
                 response = requests.post(url, headers=headers, json=data)
                 resultado_json = response.json()
                 
+                # Si Google devuelve un error, lo mandamos tal cual al chat
+                if 'error' in resultado_json:
+                    error_msg = resultado_json['error'].get('message', 'Error desconocido')
+                    await message.channel.send(f"🚨 **Google API Error:** {error_msg}")
+                    return
+
                 texto_respuesta = resultado_json['candidates'][0]['content']['parts'][0]['text']
-                
-                if len(texto_respuesta) > 2000:
-                    for i in range(0, len(texto_respuesta), 1900):
-                        await message.channel.send(texto_respuesta[i:i+1900])
-                else:
-                    await message.channel.send(texto_respuesta)
+                await message.channel.send(texto_respuesta)
 
             except Exception as e:
-                print(f"🚨 ERROR: {str(e)}")
-                await message.channel.send("⚠️ Ocurrió un problema al procesar tu mensaje. Intenta nuevamente.")
+                await message.channel.send(f"🚨 **Excepción Python:** {str(e)}")
 
-# Iniciar servidor web Flask
 threading.Thread(target=run_flask, daemon=True).start()
-
-# Iniciar bot de Discord
 client.run(DISCORD_TOKEN)

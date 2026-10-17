@@ -42,7 +42,6 @@ async def on_message(message):
             try:
                 prompt_final = f"Eres un experto y educador en terapias alternativas y medicina natural de la comunidad Hadamantiz. Responde de forma empática a: {clean_input}"
                 
-                # Usar el modelo gemini-3.8-flash indicado por Google
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={GEMINI_API_KEY}"
                 headers = {'Content-Type': 'application/json'}
                 data = {
@@ -55,8 +54,11 @@ async def on_message(message):
                 resultado_json = response.json()
                 
                 if 'error' in resultado_json:
-                    error_msg = resultado_json['error'].get('message', 'Error desconocido')
-                    await message.channel.send(f"🚨 **Google API Error:** {error_msg}")
+                    error_msg = resultado_json['error'].get('message', '')
+                    if "high demand" in error_msg.lower() or "overloaded" in error_msg.lower():
+                        await message.channel.send("🌱 *Los servidores de la IA están un poco ocupados en este momento por alta demanda. Por favor, intenta enviar tu mensaje nuevamente en unos segundos.*")
+                    else:
+                        await message.channel.send(f"⚠️ **Aviso:** {error_msg[:150]}")
                     return
 
                 texto_respuesta = resultado_json['candidates'][0]['content']['parts'][0]['text']
@@ -68,7 +70,7 @@ async def on_message(message):
                     await message.channel.send(texto_respuesta)
 
             except Exception as e:
-                await message.channel.send(f"🚨 **Excepción Python:** {str(e)}")
+                await message.channel.send("⚠️ Ocurrió un pequeño inconveniente de conexión. Inténtalo de nuevo.")
 
 threading.Thread(target=run_flask, daemon=True).start()
 client.run(DISCORD_TOKEN)

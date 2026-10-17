@@ -19,27 +19,12 @@ def run_flask():
 DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
+print(f"🔑 Verificando API Key cargada: {'CONFIGURADA CORRECTAMENTE' if GEMINI_API_KEY else '¡ESTÁ VACÍA O FALTA!'}")
+
 genai.configure(api_key=GEMINI_API_KEY)
 
-SYSTEM_PROMPT = """
-Eres un experto y educador en terapias alternativas, medicina natural, holística y bienestar integrativo dentro de la comunidad Hadamantiz.
-Tu objetivo es brindar a los miembros recomendaciones sobre terapias complementarias, hábitos saludables, fermentos, plantas medicinales, alimentación consciente y técnicas de autocuidado.
-
-Instrucciones:
-- Responde siempre de forma empática, respetuosa y estructurada.
-- Aclara siempre que tus recomendaciones son de carácter informativo y educativo, y no reemplazan la consulta con un profesional de la salud.
-"""
-
-# Configurar el modelo con las instrucciones del sistema integradas
-generation_config = {
-    "temperature": 0.7,
-}
-
-model = genai.GenerativeModel(
-    model_name="gemini-2.5-flash",
-    generation_config=generation_config,
-    system_instruction=SYSTEM_PROMPT
-)
+# Configuración simplificada del modelo sin system_instruction para evitar incompatibilidades de versión
+model = genai.GenerativeModel('gemini-2.5-flash')
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -64,7 +49,8 @@ async def on_message(message):
                 clean_input = "Hola"
 
             try:
-                response = model.generate_content(clean_input)
+                prompt_final = f"Eres un experto en terapias alternativas y medicina natural de la comunidad Hadamantiz. Responde de forma empática a la siguiente consulta: {clean_input}"
+                response = model.generate_content(prompt_final)
                 texto_respuesta = response.text
                 
                 if len(texto_respuesta) > 2000:
@@ -74,8 +60,8 @@ async def on_message(message):
                     await message.channel.send(texto_respuesta)
 
             except Exception as e:
-                print(f"Error crítico: {e}")
-                await message.channel.send("⚠️ Ocurrió un problema al procesar tu mensaje. Intenta nuevamente.")
+                print(f"🚨 ERROR CRÍTICO DE GEMINI: {str(e)}")
+                await message.channel.send(f"⚠️ Error técnico: {str(e)[:100]}")
 
 # Iniciar servidor web Flask
 threading.Thread(target=run_flask, daemon=True).start()

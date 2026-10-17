@@ -24,7 +24,7 @@ print(f"🔑 Verificando API Key cargada: {'CONFIGURADA CORRECTAMENTE' if GEMINI
 genai.configure(api_key=GEMINI_API_KEY)
 
 # Configuración simplificada del modelo sin system_instruction para evitar incompatibilidades de versión
-model = genai.GenerativeModel('gemini-2.5-flash')
+model = genai.GenerativeModel('gemini-1.5-flash')
 
 intents = discord.Intents.default()
 intents.message_content = True

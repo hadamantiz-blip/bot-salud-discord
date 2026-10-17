@@ -42,8 +42,8 @@ async def on_message(message):
             try:
                 prompt_final = f"Eres un experto y educador en terapias alternativas y medicina natural de la comunidad Hadamantiz. Responde de forma empática a: {clean_input}"
                 
-                # Usar gemini-pro con la versión v1 oficial
-                url = f"https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key={GEMINI_API_KEY}"
+                # Usar gemini-2.0-flash con la versión v1beta oficial actual
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
                 headers = {'Content-Type': 'application/json'}
                 data = {
                     "contents": [{

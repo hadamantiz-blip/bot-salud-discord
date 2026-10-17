@@ -45,9 +45,9 @@ async def on_message(message):
                 prompt_final = f"Eres un experto y educador en terapias alternativas, medicina natural, holística y bienestar integrativo dentro de la comunidad Hadamantiz. Responde de forma empática y estructurada a la siguiente consulta: {clean_input}"
                 
                 response = ai_client.models.generate_content(
-                    model='gemini-1.5-flash',
-                    contents=prompt_final
-                )
+    model='gemini-pro',
+    contents=prompt_final
+)
                 
                 texto_respuesta = response.text
                 

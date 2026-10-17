@@ -54,15 +54,11 @@ async def on_message(message):
                 clean_input = "Hola"
 
             try:
-                # Consulta limpia a Gemini 2.5 Flash
+                # Forma directa y simplificada compatible con cualquier versión
+                prompt_completo = f"{SYSTEM_PROMPT}\n\nPregunta: {clean_input}"
                 response = ai_client.models.generate_content(
                     model='gemini-2.5-flash',
-                    contents=[
-                        types.Content(
-                            role="user",
-                            parts=[types.Part.from_text(text=f"{SYSTEM_PROMPT}\n\nPregunta: {clean_input}")]
-                        )
-                    ]
+                    contents=prompt_completo
                 )
                 
                 texto_respuesta = response.text
@@ -73,10 +69,9 @@ async def on_message(message):
                     await message.channel.send(texto_respuesta)
 
             except Exception as e:
-    import traceback
-    print(f"ERROR COMPLETO EN GEMINI: {traceback.format_exc()}")
-    await message.channel.send("⚠️ Ocurrió un problema al procesar tu mensaje. Intenta nuevamente.")
-
+                print(f"Error detallado en Gemini: {e}")
+                await message.channel.send("⚠️ Ocurrió un problema al procesar tu mensaje. Intenta nuevamente.")
+                
 # Iniciar servidor web en un hilo secundario
 threading.Thread(target=run_flask, daemon=True).start()
 

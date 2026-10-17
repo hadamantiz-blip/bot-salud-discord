@@ -2,8 +2,9 @@ import os
 import threading
 from flask import Flask
 import discord
-from google import genai
+import google.generativeai as genai
 
+# --- SERVIDOR WEB FLASK PARA RENDER ---
 app = Flask(__name__)
 
 @app.route('/')
@@ -14,10 +15,14 @@ def run_flask():
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
 
+# --- CONFIGURACIÓN DE DISCORD Y GEMINI ---
 DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-ai_client = genai.Client(api_key=GEMINI_API_KEY)
+genai.configure(api_key=GEMINI_API_KEY)
+
+# Configuración del modelo con la librería clásica
+model = genai.GenerativeModel('gemini-1.5-flash')
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -44,11 +49,7 @@ async def on_message(message):
             try:
                 prompt_final = f"Eres un experto y educador en terapias alternativas, medicina natural, holística y bienestar integrativo dentro de la comunidad Hadamantiz. Responde de forma empática y estructurada a la siguiente consulta: {clean_input}"
                 
-                response = ai_client.models.generate_content(
-    model='gemini-pro',
-    contents=prompt_final
-)
-                
+                response = model.generate_content(prompt_final)
                 texto_respuesta = response.text
                 
                 if len(texto_respuesta) > 2000:
@@ -61,5 +62,8 @@ async def on_message(message):
                 print(f"🚨 ERROR CRÍTICO DE GEMINI: {str(e)}")
                 await message.channel.send(f"⚠️ Error técnico: {str(e)[:100]}")
 
+# Iniciar servidor web Flask
 threading.Thread(target=run_flask, daemon=True).start()
+
+# Iniciar bot de Discord
 client.run(DISCORD_TOKEN)

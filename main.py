@@ -19,12 +19,10 @@ def run_flask():
 DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-print(f"🔑 Verificando API Key cargada: {'CONFIGURADA CORRECTAMENTE' if GEMINI_API_KEY else '¡ESTÁ VACÍA O FALTA!'}")
-
 genai.configure(api_key=GEMINI_API_KEY)
 
-# Configuración simplificada del modelo sin system_instruction para evitar incompatibilidades de versión
-model = genai.GenerativeModel('gemini-pro')
+# Usar el modelo estándar actual de la librería
+model = genai.GenerativeModel('gemini-1.5-flash-latest')
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -49,7 +47,7 @@ async def on_message(message):
                 clean_input = "Hola"
 
             try:
-                prompt_final = f"Eres un experto en terapias alternativas y medicina natural de la comunidad Hadamantiz. Responde de forma empática a la siguiente consulta: {clean_input}"
+                prompt_final = f"Eres un experto y educador en terapias alternativas, medicina natural, holística y bienestar integrativo dentro de la comunidad Hadamantiz. Responde de forma empática y estructurada a la siguiente consulta: {clean_input}"
                 response = model.generate_content(prompt_final)
                 texto_respuesta = response.text
                 

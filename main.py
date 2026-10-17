@@ -21,7 +21,7 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 genai.configure(api_key=GEMINI_API_KEY)
 
-# Modelo estándar compatible
+# Configuración limpia del modelo estándar
 model = genai.GenerativeModel('gemini-1.5-flash')
 
 intents = discord.Intents.default()

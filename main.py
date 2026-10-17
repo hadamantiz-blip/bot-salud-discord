@@ -4,7 +4,6 @@ from flask import Flask
 import discord
 from google import genai
 
-# --- SERVIDOR WEB FLASK PARA RENDER ---
 app = Flask(__name__)
 
 @app.route('/')
@@ -15,7 +14,6 @@ def run_flask():
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
 
-# --- CONFIGURACIÓN DE DISCORD Y GEMINI ---
 DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
@@ -46,7 +44,6 @@ async def on_message(message):
             try:
                 prompt_final = f"Eres un experto y educador en terapias alternativas, medicina natural, holística y bienestar integrativo dentro de la comunidad Hadamantiz. Responde de forma empática y estructurada a la siguiente consulta: {clean_input}"
                 
-                # Usar la librería moderna con el modelo estable
                 response = ai_client.models.generate_content(
                     model='gemini-1.5-flash',
                     contents=prompt_final
@@ -64,8 +61,5 @@ async def on_message(message):
                 print(f"🚨 ERROR CRÍTICO DE GEMINI: {str(e)}")
                 await message.channel.send(f"⚠️ Error técnico: {str(e)[:100]}")
 
-# Iniciar servidor web Flask
 threading.Thread(target=run_flask, daemon=True).start()
-
-# Iniciar bot de Discord
 client.run(DISCORD_TOKEN)

@@ -2,15 +2,14 @@ import os
 import threading
 from flask import Flask
 import discord
-from google import genai
-from google.genai import types
+import google.generativeai as genai
 
-# --- SERVIDOR WEB FLASK PARA MANTENER ALERTA A RENDER ---
+# --- SERVIDOR WEB FLASK PARA RENDER ---
 app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "Bot de IA para Hadamantiz activo 24/7"
+    return "Bot Hadamantiz activo"
 
 def run_flask():
     port = int(os.environ.get("PORT", 10000))
@@ -20,7 +19,7 @@ def run_flask():
 DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-ai_client = genai.Client(api_key=GEMINI_API_KEY)
+genai.configure(api_key=GEMINI_API_KEY)
 
 SYSTEM_PROMPT = """
 Eres un experto y educador en terapias alternativas, medicina natural, holística y bienestar integrativo dentro de la comunidad Hadamantiz.
@@ -30,6 +29,17 @@ Instrucciones:
 - Responde siempre de forma empática, respetuosa y estructurada.
 - Aclara siempre que tus recomendaciones son de carácter informativo y educativo, y no reemplazan la consulta con un profesional de la salud.
 """
+
+# Configurar el modelo con las instrucciones del sistema integradas
+generation_config = {
+    "temperature": 0.7,
+}
+
+model = genai.GenerativeModel(
+    model_name="gemini-2.5-flash",
+    generation_config=generation_config,
+    system_instruction=SYSTEM_PROMPT
+)
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -54,14 +64,9 @@ async def on_message(message):
                 clean_input = "Hola"
 
             try:
-                # Forma directa y simplificada compatible con cualquier versión
-                prompt_completo = f"{SYSTEM_PROMPT}\n\nPregunta: {clean_input}"
-                response = ai_client.models.generate_content(
-                    model='gemini-2.5-flash',
-                    contents=prompt_completo
-                )
-                
+                response = model.generate_content(clean_input)
                 texto_respuesta = response.text
+                
                 if len(texto_respuesta) > 2000:
                     for i in range(0, len(texto_respuesta), 1900):
                         await message.channel.send(texto_respuesta[i:i+1900])
@@ -69,11 +74,10 @@ async def on_message(message):
                     await message.channel.send(texto_respuesta)
 
             except Exception as e:
-    import traceback
-    print(f"ERROR COMPLETO EN GEMINI: {traceback.format_exc()}")
-    await message.channel.send("⚠️ Ocurrió un problema al procesar tu mensaje. Intenta nuevamente.")
-                
-# Iniciar servidor web en un hilo secundario
+                print(f"Error crítico: {e}")
+                await message.channel.send("⚠️ Ocurrió un problema al procesar tu mensaje. Intenta nuevamente.")
+
+# Iniciar servidor web Flask
 threading.Thread(target=run_flask, daemon=True).start()
 
 # Iniciar bot de Discord
